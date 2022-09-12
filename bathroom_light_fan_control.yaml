@@ -1,0 +1,193 @@
+blueprint:
+  name: "Bathroom lights/fan control"
+  description: Full bathroom control with lights and fan
+  domain: automation
+  input:
+    controller_entity:
+      name: Control switch (action sensor)
+      selector:
+        entity:
+          domain: sensor
+          multiple: false
+    bathroom_light:
+      name: Light
+      selector:
+        entity:
+          domain: light
+    bathroom_fan:
+      name: Fan
+      selector:
+        entity:
+          domain: fan
+    fan_timer:
+      name: Fan timer
+      selector:
+        entity:
+          domain: timer
+    reminder_timer:
+      name: Reminder timer
+      selector:
+        entity:
+          domain: timer
+    guest_switch:
+      name: Guest switch
+      selector:
+        entity:
+          domain: input_boolean
+
+mode: queued
+
+trigger:
+  - platform: event
+    event_type: state_changed
+    event_data:
+      entity_id: !input controller_entity
+  - platform: event
+    event_type: timer.finished
+    event_data:
+      entity_id: !input fan_timer
+  - platform: event
+    event_type: timer.finished
+    event_data:
+      entity_id: !input reminder_timer
+
+variables:
+  trigger_action: '
+    {% if trigger.event.event_type == "state_changed" %}
+    {{ trigger.event.data.new_state.state }}
+    {% else %}
+    {{ trigger.event.data.entity_id }}
+    {% endif %}'
+  controller_entity: !input controller_entity
+  bathroom_fan: !input bathroom_fan
+  bathroom_light: !input bathroom_light
+  fan_timer: !input fan_timer
+  reminder_timer: !input reminder_timer
+  guest_swtich: !input guest_switch
+
+action:
+  - choose:
+      - conditions: '{{ trigger_action | string == fan_timer }}'
+        sequence:
+          - service: fan.turn_off
+            entity_id: !input 'bathroom_fan'
+      - conditions: '{{ trigger_action | string == reminder_timer }}'
+        sequence:
+          # cancel the fan timer if we switch the light on
+          - if:
+              - condition: state
+                entity_id: !input 'bathroom_light'
+                state: 'on'
+            then:
+              - service: timer.cancel
+                entity_id: !input 'fan_timer'
+              - service: light.turn_on
+                data:
+                  flash: short
+                target:
+                  entity_id: !input 'bathroom_light'
+              - service: timer.start
+                data:
+                  duration: '00:07:00'
+                entity_id: !input 'reminder_timer'
+      - conditions: '{{ trigger_action | string == "on" }}'
+        sequence:
+          - choose:
+              - conditions:
+                  - condition: state
+                    entity_id: !input 'bathroom_light'
+                    state: 'off'
+                sequence:
+                  - service: light.turn_on
+                    entity_id: !input 'bathroom_light'
+                  - if:
+                      - condition: state
+                        entity_id: !input 'guest_switch'
+                        state: 'on'
+                    then:
+                      - service: fan.turn_on
+                        entity_id: !input 'bathroom_fan'
+              - conditions:
+                  - condition: state
+                    entity_id: !input 'bathroom_light'
+                    state: 'on'
+                  - condition: numeric_state
+                    entity_id: !input 'bathroom_light'
+                    attribute: brightness
+                    below: '255'
+                sequence:
+                  - service: light.turn_on
+                    entity_id: !input 'bathroom_light'
+                    data:
+                      brightness: 255
+              - conditions:
+                  - condition: state
+                    entity_id: !input 'bathroom_light'
+                    state: 'on'
+                  - condition: state
+                    entity_id: !input 'bathroom_fan'
+                    state: 'off'
+                sequence:
+                  - service: fan.turn_on
+                    entity_id: !input 'bathroom_fan'
+          # cancel the fan timer if we switch the light on
+          - if:
+              - condition: state
+                entity_id: !input 'fan_timer'
+                state: 'active'
+            then:
+              - service: timer.cancel
+                entity_id: !input 'fan_timer'
+          # start the reminder timer if it's not active
+          - if:
+              - condition: not
+                conditions:
+                  - condition: state
+                    entity_id: !input 'reminder_timer'
+                    state: 'active'
+            then:
+              - service: timer.start
+                data:
+                  duration: '00:07:00'
+                entity_id: !input 'reminder_timer'
+      - conditions: '{{ trigger_action | string == "off" }}'
+        sequence:
+          - choose:
+              - conditions:
+                  - condition: state
+                    entity_id: !input 'bathroom_light'
+                    state: 'on'
+                sequence:
+                  - service: timer.cancel
+                    entity_id: !input 'reminder_timer'
+                  - service: light.turn_off
+                    entity_id: !input 'bathroom_light'
+                  - if:
+                      - condition: state
+                        entity_id: !input 'bathroom_fan'
+                        state: 'on'
+                    then:
+                      - service: timer.start
+                        data:
+                          duration: '00:02:00'
+                        entity_id: !input 'fan_timer'
+              - conditions:
+                  - condition: state
+                    entity_id: !input 'bathroom_light'
+                    state: 'off'
+                  - condition: state
+                    entity_id: !input 'bathroom_fan'
+                    state: 'on'
+                sequence:
+                  - service: timer.cancel
+                    entity_id: !input 'fan_timer'
+                  - service: fan.turn_off
+                    entity_id: !input 'bathroom_fan'
+      - conditions: '{{ trigger_action | string == "arrow_right_click" }}'
+        sequence:
+          - service: fan.turn_on
+            entity_id: !input bathroom_fan
+      - conditions: '{{ trigger_action | string == "arrow_left_click" }}'
+        sequence:
+          - service: fan.turn_off
+            entity_id: !input bathroom_fan

@@ -1,0 +1,77 @@
+blueprint:
+  name: "Bedroom light with nightlight"
+  description: Bedroom light control with nightlight functionality
+  domain: automation
+  input:
+    controller_entity:
+      name: Control switch (action sensor)
+      selector:
+        entity:
+          domain: sensor
+          multiple: false
+    bedroom_light:
+      name: Light
+      selector:
+        entity:
+          domain: light
+    nightlight_light:
+      name: Light
+      selector:
+        entity:
+          domain: light
+    nightlight_colour:
+      name: Nightlight colour
+      selector:
+        color_rgb:
+    nightlight_intensity:
+      name: Nightlight intensity (%)
+      selector:
+        number:
+          min: 0
+          max: 100
+          mode: slider
+  
+mode: queued
+
+trigger:
+  - platform: event
+    event_type: state_changed
+    event_data:
+      entity_id: !input controller_entity
+
+variables:
+  trigger_action: '
+    {% if trigger.event.event_type == "state_changed" %}
+    {{ trigger.event.data.new_state.state }}
+    {% endif %}'
+  controller_entity: !input controller_entity
+  bedroom_light: !input bedroom_light
+  nightlight_light: !input nightlight_light
+  nightlight_colour: !input nightlight_colour
+  nightlight_intensity: !input nightlight_intensity
+
+action:
+  - choose:
+      - conditions: '{{ trigger_action | string == "on" }}'
+        sequence:
+          - service: light.turn_on
+            entity_id: !input bedroom_light
+            data:
+              color_temp: 350
+              brightness_pct: 100
+      - conditions: '{{ trigger_action | string == "off" }}'
+        sequence:
+          - service: light.turn_off
+            entity_id: !input bedroom_light
+      - conditions: '{{ trigger_action | string == "brightness_move_up" }}'
+        sequence:
+          - service: light.turn_off
+            entity_id: !input bedroom_light
+          - service: light.turn_on
+            entity_id: !input nightlight_light
+            data:
+              brightness_pct: '{{ nightlight_intensity | int }}'
+              rgb_color:
+                - '{{ nightlight_colour[0] | int }}'
+                - '{{ nightlight_colour[1] | int }}'
+                - '{{ nightlight_colour[2] | int }}'
