@@ -67,11 +67,11 @@ variables:
 
 action:
   - choose:
-      - conditions: '{{ trigger_action | string == "fan_timer" }}'
+      - conditions: '{{ trigger_action | string == fan_timer }}'
         sequence:
           - service: fan.turn_off
             entity_id: !input 'bathroom_fan'
-      - conditions: '{{ trigger_action | string == "reminder_timer" }}'
+      - conditions: '{{ trigger_action | string == reminder_timer }}'
         sequence:
           # cancel the fan timer if we switch the light on
           - if:
