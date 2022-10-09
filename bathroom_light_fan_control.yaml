@@ -67,11 +67,11 @@ variables:
 
 action:
   - choose:
-      - conditions: '{{ trigger_action | string == fan_timer }}'
+      - conditions: '{{ trigger_action | string == "fan_timer" }}'
         sequence:
           - service: fan.turn_off
             entity_id: !input 'bathroom_fan'
-      - conditions: '{{ trigger_action | string == reminder_timer }}'
+      - conditions: '{{ trigger_action | string == "reminder_timer" }}'
         sequence:
           # cancel the fan timer if we switch the light on
           - if:
@@ -99,7 +99,11 @@ action:
                     state: 'off'
                 sequence:
                   - service: light.turn_on
-                    entity_id: !input 'bathroom_light'
+                    target:
+                      entity_id: !input 'bathroom_light'
+                    data:
+                      brightness_pct: "{{ states('sensor.adaptivelightbrightness') }}"
+                      color_temp: "{{ states('sensor.adaptivelightcolourtemp') }}"
                   - if:
                       - condition: state
                         entity_id: !input 'guest_switch'
