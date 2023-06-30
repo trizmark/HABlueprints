@@ -47,12 +47,12 @@ trigger:
     event_type: timer.finished
     event_data:
       entity_id: !input fan_timer
-    id: "fan timer up"
+    id: "fan_timer_up"
   - platform: event
     event_type: timer.finished
     event_data:
       entity_id: !input reminder_timer
-    id: "reminder timer up"
+    id: "reminder_timer_up"
 
 variables:
   trigger_action: '
@@ -72,13 +72,13 @@ action:
   - choose:
       - conditions:
           - condition: trigger
-            id: "fan timer up"
+            id: "fan_timer_up"
         sequence:
           - service: fan.turn_off
             entity_id: !input 'bathroom_fan'
       - conditions:
-          - condition: timer
-            id: "reminder timer up"
+          - condition: trigger
+            id: "reminder_timer_up"
         sequence:
           # cancel the fan timer if we switch the light on
           - if:
