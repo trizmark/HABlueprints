@@ -54,11 +54,33 @@ action:
   - choose:
       - conditions: '{{ trigger_action | string == "on" }}'
         sequence:
-          - service: light.turn_on
-            entity_id: !input bedroom_light
-            data:
-              color_temp: 350
-              brightness_pct: 100
+          - choose:
+              - conditions:
+                  - condition: state
+                    entity_id: !input 'bedroom_light'
+                    state: 'off'
+                sequence:
+                  - service: light.turn_on
+                    target:
+                      entity_id: !input 'bedroom_light'
+                    data:
+                      brightness_pct: "{{ states('sensor.adaptivelightbrightness') }}"
+                      color_temp: "{{ states('sensor.adaptivelightcolourtemp') }}"
+              - conditions:
+                  - condition: state
+                    entity_id: !input 'bedroom_light'
+                    state: 'on'
+                  - condition: numeric_state
+                    entity_id: !input 'bedroom_light'
+                    attribute: brightness
+                    below: '255'
+                sequence:
+                  - service: light.turn_on
+                    target:
+                      entity_id: !input 'bedroom_light'
+                    data:
+                      brightness_pct: 100
+                      color_temp: 350
       - conditions: '{{ trigger_action | string == "off" }}'
         sequence:
           - service: light.turn_off

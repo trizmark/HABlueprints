@@ -99,7 +99,11 @@ action:
                     state: 'off'
                 sequence:
                   - service: light.turn_on
-                    entity_id: !input 'bathroom_light'
+                    target:
+                      entity_id: !input 'bathroom_light'
+                    data:
+                      brightness_pct: "{{ states('sensor.adaptivelightbrightness') }}"
+                      color_temp: "{{ states('sensor.adaptivelightcolourtemp') }}"
                   - if:
                       - condition: state
                         entity_id: !input 'guest_switch'
@@ -117,9 +121,11 @@ action:
                     below: '255'
                 sequence:
                   - service: light.turn_on
-                    entity_id: !input 'bathroom_light'
+                    target:
+                      entity_id: !input 'bathroom_light'
                     data:
-                      brightness: 255
+                      brightness_pct: 100
+                      color_temp: 350
               - conditions:
                   - condition: state
                     entity_id: !input 'bathroom_light'
