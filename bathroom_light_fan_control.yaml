@@ -42,14 +42,17 @@ trigger:
     event_type: state_changed
     event_data:
       entity_id: !input controller_entity
+    id: "button"
   - platform: event
     event_type: timer.finished
     event_data:
       entity_id: !input fan_timer
+    id: "fan timer up"
   - platform: event
     event_type: timer.finished
     event_data:
       entity_id: !input reminder_timer
+    id: "reminder timer up"
 
 variables:
   trigger_action: '
@@ -67,11 +70,15 @@ variables:
 
 action:
   - choose:
-      - conditions: '{{ trigger_action | string == fan_timer }}'
+      - conditions:
+          - condition: trigger
+            id: "fan timer up"
         sequence:
           - service: fan.turn_off
             entity_id: !input 'bathroom_fan'
-      - conditions: '{{ trigger_action | string == reminder_timer }}'
+      - conditions:
+          - condition: timer
+            id: "reminder timer up"
         sequence:
           # cancel the fan timer if we switch the light on
           - if:
@@ -90,7 +97,10 @@ action:
                 data:
                   duration: '00:07:00'
                 entity_id: !input 'reminder_timer'
-      - conditions: '{{ trigger_action | string == "on" }}'
+      - conditions: # '{{ trigger_action | string == "on" }}'
+          - condition: trigger
+            id: "button"
+          - "{{ trigger.event.data.new_state.state | string == 'on' }}"
         sequence:
           - choose:
               - conditions:
@@ -150,7 +160,10 @@ action:
                 data:
                   duration: '00:07:00'
                 entity_id: !input 'reminder_timer'
-      - conditions: '{{ trigger_action | string == "off" }}'
+      - conditions: # '{{ trigger_action | string == "off" }}'
+          - condition: trigger
+            id: "button"
+          - "{{ trigger.event.data.new_state.state | string == 'off' }}"
         sequence:
           - choose:
               - conditions:
@@ -183,11 +196,17 @@ action:
                     entity_id: !input 'fan_timer'
                   - service: fan.turn_off
                     entity_id: !input 'bathroom_fan'
-      - conditions: '{{ trigger_action | string == "arrow_right_click" }}'
+      - conditions: # '{{ trigger_action | string == "arrow_right_click" }}'
+          - condition: trigger
+            id: "button"
+          - "{{ trigger.event.data.new_state.state | string == 'arrow_right_click' }}"
         sequence:
           - service: fan.turn_on
             entity_id: !input bathroom_fan
-      - conditions: '{{ trigger_action | string == "arrow_left_click" }}'
+      - conditions: # '{{ trigger_action | string == "arrow_left_click" }}'
+          - condition: trigger
+            id: "button"
+          - "{{ trigger.event.data.new_state.state | string == 'arrow_left_click' }}"
         sequence:
           - service: fan.turn_off
             entity_id: !input bathroom_fan
