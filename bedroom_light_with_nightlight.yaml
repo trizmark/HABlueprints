@@ -71,7 +71,7 @@ action:
                     entity_id: !input 'bedroom_light'
                     state: 'on'
                   - condition: numeric_state
-                    entity_id: !input 'bathroom_lbedroom_lightight'
+                    entity_id: !input 'bedroom_light'
                     attribute: brightness
                     below: '255'
                 sequence:
