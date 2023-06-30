@@ -55,12 +55,6 @@ trigger:
     id: "reminder_timer_up"
 
 variables:
-  trigger_action: '
-    {% if trigger.event.event_type == "state_changed" %}
-    {{ trigger.event.data.new_state.state }}
-    {% else %}
-    {{ trigger.event.data.entity_id }}
-    {% endif %}'
   controller_entity: !input controller_entity
   bathroom_fan: !input bathroom_fan
   bathroom_light: !input bathroom_light
@@ -97,7 +91,7 @@ action:
                 data:
                   duration: '00:07:00'
                 entity_id: !input 'reminder_timer'
-      - conditions: # '{{ trigger_action | string == "on" }}'
+      - conditions:
           - condition: trigger
             id: "button"
           - "{{ trigger.event.data.new_state.state | string == 'on' }}"
@@ -160,7 +154,7 @@ action:
                 data:
                   duration: '00:07:00'
                 entity_id: !input 'reminder_timer'
-      - conditions: # '{{ trigger_action | string == "off" }}'
+      - conditions:
           - condition: trigger
             id: "button"
           - "{{ trigger.event.data.new_state.state | string == 'off' }}"
@@ -196,14 +190,14 @@ action:
                     entity_id: !input 'fan_timer'
                   - service: fan.turn_off
                     entity_id: !input 'bathroom_fan'
-      - conditions: # '{{ trigger_action | string == "arrow_right_click" }}'
+      - conditions:
           - condition: trigger
             id: "button"
           - "{{ trigger.event.data.new_state.state | string == 'arrow_right_click' }}"
         sequence:
           - service: fan.turn_on
             entity_id: !input bathroom_fan
-      - conditions: # '{{ trigger_action | string == "arrow_left_click" }}'
+      - conditions:
           - condition: trigger
             id: "button"
           - "{{ trigger.event.data.new_state.state | string == 'arrow_left_click' }}"
