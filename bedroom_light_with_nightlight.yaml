@@ -65,7 +65,7 @@ action:
                       entity_id: !input 'bedroom_light'
                     data:
                       brightness_pct: "{{ states('sensor.adaptivelightbrightness') }}"
-                      color_temp: "{{ states('sensor.adaptivelightcolourtemp') }}"
+                      color_temp_kelvin: "{{ states('sensor.adaptivelightcolourtempkelvin') }}"
               - conditions:
                   - condition: state
                     entity_id: !input 'bedroom_light'
